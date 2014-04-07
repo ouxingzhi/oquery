@@ -17,9 +17,7 @@ module.exports = function(grunt){
 		clean:['build/*','docs/*'],
 		jshint:{
 			options:{
-				undef:true,
-				browser:true,
-				devel:true
+				browser:true
 			},
 			all:['src/**/*.js']
 		},
@@ -43,5 +41,5 @@ module.exports = function(grunt){
 
 
 	//执行默认任务
-	grunt.registerTask('default',['clean','jshint','uglify','yuidoc']);
+	grunt.registerTask('default',['clean','uglify']);
 };

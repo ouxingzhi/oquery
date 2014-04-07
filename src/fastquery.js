@@ -1,5 +1,4 @@
-;
-! function(window, document, undefined) {
+!function(window, document, undefined) {
     //简单的选择器正则
     var sreg = /^(?:([a-z]+)|(?:#([a-z]\w*)))$/i,
         //复杂选择器正则
