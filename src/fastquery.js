@@ -3,7 +3,7 @@
     //简单的选择器正则
     var sreg = /^(?:([a-z]+)|(?:#([a-z]\w*)))$/i,
         //复杂选择器正则
-        selreg = /^([a-z]+)?(?:#([a-z][\w-]*))?((?:\.[a-z][\w-]*)+)?((?:\[["']?[a-z][\w-]*["']?(?:[\^\$\*\|~]?=["']?[a-z][\w-]*)?["']?\])+)?(?:\:([a-z][\w-]*[a-z])(?:\((.+)\))?)?$/im,
+        selreg = /^([a-z]+\w*)?(?:#([a-z][\w-]*))?((?:\.[a-z][\w-]*)+)?((?:\[["']?[a-z][\w-]*["']?(?:[\^\$\*\|~|\!]?=["']?[a-z][\w-]*)?["']?\])+)?(?:\:([a-z][\w-]*[a-z])(?:\((.+)\))?)?$/im,
         //层级关系正则
         tierreg = /(?!\([^\)]*)\s(?![^\(]*\))|\~(?!=)|\+|>/img,
         //首尾空格正则
@@ -13,7 +13,7 @@
         //类获取正则
         clsreg = /\.([a-z][\w-]*)/img,
         //属性获取正则
-        attrreg = /\[(?:["']?([a-z][\w-]*)["']?)(?:([\^\$\*\|~]?=)["']?([a-z][\w-]*)["']?)?\]/img,
+        attrreg = /\[(?:["']?([a-z][\w-]*)["']?)(?:([\^\$\*\|~|\!]?=)["']?([a-z][\w-]*)["']?)?\]/img,
         //空格
         blank2reg = /\s+/m,
         //全局空格
@@ -120,9 +120,9 @@
                     ops.push(op);
                 });
                 var tiers = [];
-                for(var i=0;i<sels.length;i++){
-                    tiers.push(this.parseSelector(sels[i]));
-                    if(ops[i]) tiers.push(ops[i]);
+                for(var t=0;t<sels.length;t++){
+                    tiers.push(this.parseSelector(sels[t]));
+                    if(ops[t]) tiers.push(ops[t]);
                 }
                 tiers[0] ? tiers.unshift(' ') : tiers.shift(); 
                 ls.push(tiers);
@@ -261,14 +261,14 @@
                 if(rootNode != node && this.checkTier(tier,node)){
                     result.push(node);
                 }
-            });
+            },rootNode);
             return result;
         },
         scanNextSibling:function(tier,node){
             var result = [];
             while(node = node.nextSibling){
-                if(node.nodeType === 1 && this.checkTier(tier,node)){
-                    result.push(node);
+                if(node.nodeType === 1){
+                    if(this.checkTier(tier,node)) result.push(node);
                     return result;
                 }
             };
@@ -288,7 +288,7 @@
             if(tier.cls && tier.cls.length && !this.checkCls(tier.cls,node)){
                 return false;
             }
-            if(tier.attrs && tier.attrs.length && !this.checkAttrs(this.attrs,node)){
+            if(tier.attrs && tier.attrs.length && !this.checkAttrs(tier.attrs,node)){
                 return false;
             }
             if(tier.tagname && tier.tagname.toLowerCase() !== node.nodeName.toLowerCase()){
@@ -311,15 +311,17 @@
             return true;
         },
         checkAttrs:function(attrs,node){
-            var attr;
+            var attr,r;
             for(var i=0;i<attrs.length;i++){
                 attr = attrs[i];
                 if(!attr.op){
-                    return !!node.getAttribute(attr.name);
+                    r = this.getAttr(attr.name,node);
+                    if(!r) return false;
                 }else{
                     var op = attr.op;
                     if(!this.attrop[op]) return false;
-                    return this.attrop[op].call(this,attr.name,attr.value,node);
+                    r = this.attrop[op].call(this,attr.name,attr.value,node);
+                    if(!r) return false;
                 }
             }
             return true;
@@ -330,33 +332,42 @@
         },
         attrop:{
             '=':function(name,value,node){
-                return node.getAttribute(name) === value;
+                return this.getAttr(name,node) === value;
             },
             '~=':function(name,value,node){
-                var nval = node.getAttribute(name);
+                var nval = this.getAttr(name,node);
                 if(!nval) return false;
                 return RegExp('(?:^|\\s+)'+value+'(?:$|\\s+)').test(nval);
             },
             '^=':function(name,value,node){
-                var nval = node.getAttribute(name);
+                var nval = this.getAttr(name,node);
                 if(!nval) return false;
                 return RegExp('^'+value).test(nval);
             },
             '$=':function(name,value,node){
-                var nval = node.getAttribute(name);
+                var nval = this.getAttr(name,node);
                 if(!nval) return false;
                 return RegExp(value+'$').test(nval);
             },
             '*=':function(name,value,node){
-                var nval = node.getAttribute(name);
+                var nval = this.getAttr(name,node);
                 if(!nval) return false;
                 return RegExp(value).test(nval);
             },
             '|=':function(name,value,node){
-                var nval = node.getAttribute(name);
+                var nval = this.getAttr(name,node);
                 if(!nval) return false;
                 return RegExp(value+'(?:$|-)').test(nval);
+            },
+            '!=':function(name,value,node){
+                var nval =this.getAttr(name,node);
+                if(!nval) return false;
+                return value !== nval;
             }
+        },
+        getAttr:function(name,node){
+            if(name === 'class') return node.className;
+            return node.getAttribute(name);
         },
         pseudes:{
             'first':function(pseudo,pseudoAttr,node){
@@ -380,7 +391,8 @@
                 return last === node;
             },
             'not':function(pseudo,param,node){
-                
+                var tier = this.parseMultiSelector(param)[0][1];
+                return !this.checkTier(tier,node);
             },
             'even':function(pseudo,param,node){
                 var i = 1;
@@ -430,12 +442,7 @@
                 return node.innerText.indexOf(param) > -1;
             },
             'empty':function(pseudo,param,node){
-                node = node.firstChild;
-                if(!node) return false;
-                do{
-                    if(node.nodeType === 1) return false;
-                }while(node = node.nextSibling);
-                return true;
+                return !node.firstChild;
             },
             'has':function(pseudo,param,node){
                 //todo
