@@ -57,16 +57,21 @@
             if(f.call(s,l[i],i,l)) return ;
         }
     }
-
-    function oQuery(selection, rootNode, ret) {
-        return new oQuery.fn.init(selection,rootNode,ret);
+    /**
+     * oQuery选择器入口
+     * @param selection {String} 传入选择器字符串
+     * @param rootNode {Node} 选择器查找相对根节点，不传默认为document
+     * @return {Array} 返回查询结果
+     */
+    function oQuery(selection, rootNode) {
+        return new oQuery.fn.init(selection,rootNode);
     }
     oQuery.fn = oQuery.prototype = {
         constructor: oQuery,
-        init: function(selection, rootNode, ret) {
-            var d, t;
-            ret = ret || [];
+        init: function(selection, rootNode) {
+            var d, t, ret = [];
             rootNode = rootNode || document;
+            //简单表达式处理
             if (d = sreg.exec(selection)) {
                 if (d[1]) {
                     return push.apply(ret, rootNode.getElementsByTagName(d[1])), ret;
@@ -75,21 +80,25 @@
                     t && ret.push(t);
                     return ret;
                 }
+            //复杂表达式处理
             } else {
                 if (rootNode.querySelectorAll) {
+                    //调用原生方法
                     try{
                         return push.apply(ret, rootNode.querySelectorAll(selection)), ret;
                     }catch(e){
+                        //报错调用oQuery自己的选择器
                         return this.querySelectorAll(selection, rootNode);
                     }
                 } else {
+                    //但不支持querySelectorAll，调用oQuery自身的选择器
                     return this.querySelectorAll(selection, rootNode);
                 }
             }
         },
         querySelectorAll: function(selection, rootNode) {
             var result = [];
-
+            //解析选择器，得到解析列表
             var ls = this.parseMultiSelector(selection);
             each(ls,function(tiers){
                 var res = this.queryNodes(tiers,rootNode);
@@ -256,11 +265,12 @@
                     node = [];
                     each(tier.cls,function(v){
                         each(rootNode.getElementsByClassName(v),function(v){
-                            if(node.indexOf(v) === -1){
+                            if(!this.isExist(node,v)){
                                 node.push(v);
+                                this.setTag(node,v);
                             }
-                        });
-                    });
+                        },this);
+                    },this);
                     each(node,function(v){
                         if(this.checkTier(tier,v)){
                             result.push(v);
