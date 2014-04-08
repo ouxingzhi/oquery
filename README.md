@@ -1,4 +1,4 @@
-fastquery
+oquery
 =========
 
-兼容ie6+,chrmoe,firefox..dom选择器
+兼容ie6+,chrmoe,firefox,CSS3 选择器

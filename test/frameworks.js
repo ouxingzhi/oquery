@@ -32,9 +32,9 @@ fun:"Sly.search"
  file:"inCore.js,inQuery.js",
  fun:"$"
 },
-"fastQuery":{
- file:"../../src/fastquery.js",
- fun:"fastQuery"
+"oQuery":{
+ file:"../../src/oquery.js",
+ fun:"oQuery"
 },
 "EXT 2.2":{disable:1,
  file:"ext-2.2.js",

@@ -58,11 +58,11 @@
         }
     }
 
-    function fastQuery(selection, rootNode, ret) {
-        return new fastQuery.fn.init(selection,rootNode,ret);
+    function oQuery(selection, rootNode, ret) {
+        return new oQuery.fn.init(selection,rootNode,ret);
     }
-    fastQuery.fn = fastQuery.prototype = {
-        constructor: fastQuery,
+    oQuery.fn = oQuery.prototype = {
+        constructor: oQuery,
         init: function(selection, rootNode, ret) {
             var d, t;
             ret = ret || [];
@@ -544,6 +544,9 @@
             }
         }
     };
-    fastQuery.fn.init.prototype = fastQuery.fn;
-    window.fastQuery = fastQuery;
+    oQuery.fn.init.prototype = oQuery.fn;
+    if(typeof define === 'function' && define.amd){
+        define('oquery',[],function(){ return oQuery;});
+    }
+    window.oQuery = oQuery;
 }(window, document);
