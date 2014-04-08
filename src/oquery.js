@@ -4,7 +4,7 @@
         //复杂选择器正则
         selreg = /^([a-z]+\w*)?(?:#([a-z][\w-]*))?((?:\.[a-z][\w-]*)+)?((?:\[["']?[a-z][\w-]*["']?(?:[\^\$\*\|~|\!]?=["']?[a-z][\w-]*)?["']?\])+)?(?:\:([a-z][\w-]*[a-z])(?:\((.+)\))?)?$/im,
         //层级关系正则
-        tierreg = /(?!\([^\)]*)\s(?![^\(]*\))|\~(?!=)|\+|>/img,
+        tierreg = /(?!\([^\)]*)(?:\s|\~(?!=)|\+|>)(?![^\(]*\))/img,
         //首尾空格正则
         trimreg =/^\s+|\s+$/mg,
         //过滤层级关系中的多余空格正则
@@ -22,7 +22,9 @@
         //标题元素
         headerreg = /h1|h2|h3|h4|h5|h6/i,
         //表单元素
-        inputreg = /input|select|textarea|button/i;
+        inputreg = /input|select|textarea|button/i,
+        //nth-child 参数捕捉
+        notchildreg = /^(?:(\d+)|(?:(\d+)n(?:([\+-])(\d+))?)|(odd|even)|(n))$/i;
 
     Array.prototype.indexOf = Array.prototype.indexOf || function(o){
         for(var i=0;i<this.length;i++){
@@ -31,6 +33,21 @@
         return -1;
     };
     
+    function indexOfE(el,fa,tag){
+        var i = -1;
+        dir = fa ? 'nextSibling' : 'previousSibling';
+        do{
+            if(el.nodeType === 1){
+                if(tag){
+                    if(tag === el.nodeName)i++;
+                }else{
+                    i++;
+                }
+                
+            } 
+        }while(el = el[dir]);
+        return i;
+    }
     function getCurStyle(el,stylename){
         if(el.currentStyle){
             return el.currentStyle[stylename];
@@ -482,12 +499,38 @@
             'visible':function(pseudo,param,node){
                 return getCurStyle(node,'display') !== 'none';
             },
-            'nth-child':function(pseudo,param,node){
-                //todo
+            'nth-child':function(pseudo,param,node,dir,tag){
+                var index = indexOfE(node,dir,tag)+1,
+                    m = notchildreg.exec(param),
+                    pos;
+                if(m[1]){
+                    return index === parseInt(m[1]);
+                }else if(m[2]){
+                    pos = parseInt(m[3]+m[4] || 0);
+
+                    if(pos === index) return true;
+                    if(index < pos) return false;
+                    return !((index - pos) % m[2]);
+
+                }else if(m[5]){
+                    return m[5] === 'odd' ? index%2 : !(index%2);
+                }else if(m[6]){
+                    return true;
+                }
             },
             'first-child':function(pseudo,param,node){
                 var first;
-                each(node.parent.childNodes,function(n){
+                each(node.parentNode.childNodes,function(n){
+                    if(n.nodeType===1){
+                        first = n;
+                        return true;
+                    }
+                });
+                return first === node; 
+            },
+            'last-child':function(pseudo,param,node){
+                var first;
+                lastEach(node.parentNode.childNodes,function(n){
                     if(n.nodeType===1){
                         first = n;
                         return true;
@@ -506,6 +549,51 @@
                     }
                 }
                 return true;
+            },
+            'only-of-type':function(pseudo,param,node){
+                var tagname = node.nodeName,
+                    i = 0,
+                    node = node.parentNode.firstChild;
+                
+                do{
+                    if(node.nodeType === 1 && tagname === node.nodeName){
+                        i++;
+                        if(i>1) return false;
+                    }
+                }while(node = node.nextSibling);
+                return true;
+            },
+            'first-of-type':function(pseudo,param,node){
+                var i = 0,
+                    n = node.parentNode.firstChild;
+                
+                do{
+                    if(n.nodeType === 1 && node.nodeName === n.nodeName ){
+                        i++;
+                        if(i===1 && node === n) return true;
+                        if(i > 1) return false;
+                    }
+                }while(n = n.nextSibling);
+                return false;
+            },
+            'last-of-type':function(pseudo,param,node){
+                var i = 0,
+                    n = node.parentNode.lastChild;
+                
+                do{
+                    if(n.nodeType === 1 && node.nodeName === n.nodeName ){
+                        i++;
+                        if(i===1 && node === n) return true;
+                        if(i > 1) return false;
+                    }
+                }while(n = n.previousSibling);
+                return false;
+            },
+            'nth-of-type':function(pseudo,param,node){
+                return this.pseudes['nth-child'].call(this,pseudo,param,node,false,node.nodeName);
+            },
+            'nth-last-of-type':function(pseudo,param,node){
+                return this.pseudes['nth-child'].call(this,pseudo,param,node,true,node.nodeName);
             },
             'input':function(pseudo,param,node){
                 return inputreg.test(node.nodeName);

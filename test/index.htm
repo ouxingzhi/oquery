@@ -6,14 +6,21 @@
 	<script type="text/javascript" src="../src/oquery.js"></script>
 </head>
 <body>
-	<div class="clas de" id="ed">
-		<p></p>
-		<div class="set">
-			<div></div>
-		</div>
+	<div>ss
+		<p>ddd</p>
+		<div>11</div>
+	</div>
+	<div>dd
+		<div>11</div>
+		<div>22</div>
 	</div>
 	<script>
-		console.log(oQuery('#ed:eq(0)'));
+		oQuery('div:nth-last-of-type(odd)').forEach(function(v){
+			v.style.color = '#f00'
+		});
 	</script>
+	<style>
+		/*div:first-of-type{ color:#f00;}*/
+	</style>
 </body>
 </html>
