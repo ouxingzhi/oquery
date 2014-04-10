@@ -7,7 +7,9 @@
 	<script type="text/javascript" src="../src/oquery.js"></script>
 	<script type="text/javascript">
     window.onload =function(){
-      console.log(oQuery('div :only-of-type').length);
+      var s = new Date().valueOf();
+      var l = oQuery('p:nth-child(even)').length;
+      alert((new Date()-s) + ' ' +l);
     }
 	</script>
 </head>
