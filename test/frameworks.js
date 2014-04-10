@@ -33,7 +33,7 @@ fun:"Sly.search"
  fun:"$"
 },
 "oQuery":{
- file:"../../src/oquery.js",
+ file:"https://raw.githubusercontent.com/ouxingzhi/oquery/master/src/oquery.js",
  fun:"oQuery"
 },
 "EXT 2.2":{disable:1,
