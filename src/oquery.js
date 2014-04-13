@@ -27,6 +27,18 @@
         notchildreg = /^(?:(\d+)|(?:(\d+)n(?:([\+-])(\d+))?)|(odd|even)|(n))$/i,
         qk = parseInt(Math.random() * 10000);
 
+    function indexOf(arr,value){
+        if(!arr) return -1;
+        if(arr.indexOf) return arr.indexOf(value);
+        var index = -1;
+        each(arr,function(v,i){
+            if(value === v){
+                index = i;
+                return true;
+            }
+        });
+        return index;
+    }    
 
     function indexOfE(el, fa, tag) {
         var i = -1,sel = el;
@@ -646,4 +658,40 @@
         });
     }
     window.oQuery = oQuery;
+
+    function _checkTiers(tiers,node){
+        var r;
+        for(var i=0,l=tiers.length;i<l;i++){
+            r=oQuery.fn.checkTier(tiers[i],node);
+            r=oQuery.fn.filter(tiers[i],[node]);
+            if(r.length > 0) return true;
+        }
+        return false;
+    }
+    var roothtml = document.documentElement,
+        matchesfun = roothtml.matchesSelector || roothtml.webkitMatchesSelector || roothtml.mozMatchesSelector || roothtml.msMatchesSelector;
+    oQuery.matchesSelector = function(node,selector,rootnode){
+        if(matchesfun){
+            return matchesfun.call(node,selector);
+        }else{
+            rootnode = rootnode || document;
+            var tiers = oQuery.fn.parseMultiSelector(selector);
+            var isMultiple = false;
+            each(tiers,function(v){
+                if(v.length > 2){
+                    isMultiple = true;
+                    return true;
+                }
+            });
+            if(isMultiple){
+                return indexOf(oQuery(selector,rootnode),node) !== -1;
+            }else{
+                return _checkTiers(tiers,node);
+            }
+        }
+    }
+
+
+
 }(window, document);
+
